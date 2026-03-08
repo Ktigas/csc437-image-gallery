@@ -19,7 +19,7 @@ export function ImageDetails() {
                 }
                 
                 const images = await response.json();
-                const foundImage = images.find(img => img.id === imageId);
+                const foundImage = images.find(img => img._id === imageId);
                 
                 if (!foundImage) {
                     throw new Error(`Image with ID ${imageId} not found`);
