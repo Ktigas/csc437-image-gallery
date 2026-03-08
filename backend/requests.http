@@ -1,0 +1,55 @@
+### Get all images
+GET http://localhost:3000/api/images
+
+### Get one image by ID (success)
+GET http://localhost:3000/api/images/69adc72668dd63050662093d
+
+### Get one image by ID (invalid ID format)
+GET http://localhost:3000/api/images/invalid-id
+
+### Get one image by ID (non-existent ID)
+GET http://localhost:3000/api/images/000000000000000000000000
+
+### Rename image (success)
+PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Content-Type: application/json
+
+{
+    "name": "New Image Name"
+}
+
+### Rename image (invalid ID format)
+PATCH http://localhost:3000/api/images/invalid-id
+Content-Type: application/json
+
+{
+    "name": "New Name"
+}
+
+### Rename image (non-existent ID)
+PATCH http://localhost:3000/api/images/000000000000000000000000
+Content-Type: application/json
+
+{
+    "name": "New Name"
+}
+
+### Rename image (name too long - over 100 chars)
+PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Content-Type: application/json
+
+{
+    "name": "This is a very long image name that exceeds one hundred characters which is the limit set by the API for testing purposes. This should definitely trigger the 413 error."
+}
+
+### Rename image (missing name in request body)
+PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Content-Type: application/json
+
+{}
+
+### Rename image (wrong content type)
+PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Content-Type: text/plain
+
+New Name
