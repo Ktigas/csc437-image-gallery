@@ -1,5 +1,5 @@
+// frontend/src/LoginPage.jsx
 import React from "react";
-import { MainLayout } from "./MainLayout.jsx";
 import "./LoginPage.css";
 
 export function LoginPage() {
@@ -7,7 +7,7 @@ export function LoginPage() {
     const passwordInputId = React.useId();
 
     return (
-        <MainLayout>
+        <>
             <h2>Login</h2>
             <form className="LoginPage-form">
                 <label htmlFor={usernameInputId}>Username</label>
@@ -18,6 +18,6 @@ export function LoginPage() {
 
                 <input type="submit" value="Submit" />
             </form>
-        </MainLayout>
+        </>
     );
 }
