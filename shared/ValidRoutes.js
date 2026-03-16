@@ -1,14 +1,17 @@
 // shared/ValidRoutes.js
+
 export const VALID_ROUTES = {
     HOME: "/",
     UPLOAD: "/upload",
     LOGIN: "/login",
-    IMAGE_DETAILS: "/images/:imageId"  // This is a pattern, not a concrete path
+    REGISTER: "/register",
+    IMAGE_DETAILS: "/images/:imageId",
 };
 
-// For concrete paths without parameters (used by backend)
+// Concrete paths that the Express server should serve index.html for
 export const VALID_CONCRETE_PATHS = [
     "/",
     "/upload",
-    "/login"
+    "/login",
+    "/register"
 ];

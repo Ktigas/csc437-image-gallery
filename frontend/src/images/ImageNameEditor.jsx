@@ -1,7 +1,7 @@
 // frontend/src/images/ImageNameEditor.jsx
 import { useState } from "react";
 
-export function ImageNameEditor({ imageId, initialValue, currentImage, onImageUpdated }) {
+export function ImageNameEditor({ imageId, initialValue, currentImage, authToken, onImageUpdated }) {
     const [isEditingName, setIsEditingName] = useState(false);
     const [nameInput, setNameInput] = useState(initialValue || "");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -10,53 +10,35 @@ export function ImageNameEditor({ imageId, initialValue, currentImage, onImageUp
     function handleEditPressed() {
         setIsEditingName(true);
         setNameInput(initialValue || "");
-        setError(""); // Clear any previous errors
+        setError("");
     }
 
     async function handleSubmitPressed() {
-        // Clear previous error
         setError("");
-        
-        // Don't submit if name is empty
         if (nameInput.length === 0) return;
-        
+
         setIsSubmitting(true);
-        
+
         try {
             const response = await fetch(`/api/images/${imageId}`, {
-                method: 'PATCH',
+                method: "PATCH",
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${authToken}`,
                 },
-                body: JSON.stringify({ name: nameInput })
+                body: JSON.stringify({ name: nameInput }),
             });
-            
-            if (!response.ok) {
-                if (response.status === 400) {
-                    throw new Error('Bad request: Invalid data format');
-                } else if (response.status === 404) {
-                    throw new Error('Image not found');
-                } else if (response.status === 413) {
-                    throw new Error('Image name is too long (max 100 characters)');
-                } else {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+
+            if (response.status === 403) {
+                throw new Error("You do not own this image.");
+            } else if (response.status === 401) {
+                throw new Error("You must be logged in to rename images.");
+            } else if (!response.ok) {
+                throw new Error(`Failed to rename image (status ${response.status})`);
             }
-            
-            // Success - status 204 No Content
-            // Update the parent component with the updated image
-            // Create a new image object with the updated name
-            const updatedImage = {
-                ...currentImage,  // Spread all existing properties
-                name: nameInput   // Override the name with the new value
-            };
-            
-            // Pass the complete updated image back to the parent
-            onImageUpdated(updatedImage);
-            
-            // Exit edit mode
+
+            onImageUpdated({ ...currentImage, name: nameInput });
             setIsEditingName(false);
-            
         } catch (err) {
             setError(err.message);
             console.error("Failed to rename image:", err);
@@ -67,43 +49,31 @@ export function ImageNameEditor({ imageId, initialValue, currentImage, onImageUp
 
     return (
         <div style={{ margin: "1em 0" }}>
-            {/* Accessible live region for screen readers */}
-            <div aria-live="polite" className="sr-only">
-                {isSubmitting && "Renaming image in progress..."}
-                {error && `Error: ${error}`}
-            </div>
-            
             {error && (
-                <div className="error-message" style={{ color: "#d32f2f", marginBottom: "0.5em" }}>
-                    Error: {error}
-                </div>
+                <p style={{ color: "#d32f2f" }} aria-live="polite">
+                    {error}
+                </p>
             )}
-            
-            {isSubmitting && (
-                <div className="loading-message" style={{ color: "#666", marginBottom: "0.5em" }}>
-                    Renaming image...
-                </div>
-            )}
-            
+
             {isEditingName ? (
                 <div>
                     <label>
-                        New Name
+                        New name{" "}
                         <input
                             required
-                            style={{ marginLeft: "0.5em", marginRight: "0.5em" }}
                             value={nameInput}
-                            onChange={e => setNameInput(e.target.value)}
+                            onChange={(e) => setNameInput(e.target.value)}
                             disabled={isSubmitting}
                         />
                     </label>
-                    <button 
-                        disabled={nameInput.length === 0 || isSubmitting} 
+                    <button
                         onClick={handleSubmitPressed}
+                        disabled={nameInput.length === 0 || isSubmitting}
+                        style={{ marginLeft: "0.5em" }}
                     >
-                        Submit
+                        {isSubmitting ? "Saving..." : "Submit"}
                     </button>
-                    <button 
+                    <button
                         onClick={() => setIsEditingName(false)}
                         disabled={isSubmitting}
                         style={{ marginLeft: "0.5em" }}
@@ -112,9 +82,7 @@ export function ImageNameEditor({ imageId, initialValue, currentImage, onImageUp
                     </button>
                 </div>
             ) : (
-                <div>
-                    <button onClick={handleEditPressed}>Edit name</button>
-                </div>
+                <button onClick={handleEditPressed}>Edit name</button>
             )}
         </div>
     );

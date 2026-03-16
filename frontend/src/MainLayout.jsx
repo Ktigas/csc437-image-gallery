@@ -1,12 +1,12 @@
 // frontend/src/MainLayout.jsx
-import { Outlet } from 'react-router';
+import { Outlet } from "react-router";
 import { Header } from "./Header.jsx";
 
-export function MainLayout() {
+export function MainLayout({ authToken }) {
     return (
         <div>
-            <Header />
-            <div style={{padding: "0 2em"}}>
+            <Header authToken={authToken} />
+            <div style={{ padding: "0 2em" }}>
                 <Outlet />
             </div>
         </div>
