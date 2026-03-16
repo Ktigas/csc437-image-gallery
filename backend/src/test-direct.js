@@ -47,7 +47,7 @@ async function testDirect() {
         }
         
     } catch (error) {
-        console.error("❌ Error:", error);
+        console.error("Error:", error);
     } finally {
         await client.close();
         console.log("\n8. Connection closed");

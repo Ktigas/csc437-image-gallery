@@ -1,55 +1,150 @@
-### Get all images
+### Register a new user
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+    "username": "chunkylover23",
+    "email": "chunky@example.com",
+    "password": "password123"
+}
+
+### Register another user (for testing ownership)
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+    "username": "anotheruser",
+    "email": "another@example.com",
+    "password": "password123"
+}
+
+### Try to register with missing fields (should get 400)
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+    "username": "testuser"
+}
+
+### Try to register duplicate username (should get 409)
+POST http://localhost:3000/api/users
+Content-Type: application/json
+
+{
+    "username": "chunkylover23",
+    "email": "duplicate@example.com",
+    "password": "password123"
+}
+
+### Login with correct credentials (save the token from response)
+POST http://localhost:3000/api/auth/tokens
+Content-Type: application/json
+
+{
+    "username": "chunkylover23",
+    "password": "password123"
+}
+
+### Login with wrong password (should get 401)
+POST http://localhost:3000/api/auth/tokens
+Content-Type: application/json
+
+{
+    "username": "chunkylover23",
+    "password": "wrongpassword"
+}
+
+### Login with non-existent user (should get 401)
+POST http://localhost:3000/api/auth/tokens
+Content-Type: application/json
+
+{
+    "username": "nonexistent",
+    "password": "password123"
+}
+
+### Get all images (should fail - 401 Unauthorized)
 GET http://localhost:3000/api/images
 
-### Get one image by ID (success)
+### Get all images with token (replace TOKEN with actual token from login)
+GET http://localhost:3000/api/images
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
+
+### Get one image by ID with token
 GET http://localhost:3000/api/images/69adc72668dd63050662093d
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
 
-### Get one image by ID (invalid ID format)
+### Get one image by ID (invalid ID format) with token
 GET http://localhost:3000/api/images/invalid-id
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
 
-### Get one image by ID (non-existent ID)
+### Get one image by ID (non-existent ID) with token
 GET http://localhost:3000/api/images/000000000000000000000000
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
 
-### Rename image (success)
+### Rename image (success - if owned by chunkylover23)
 PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
 Content-Type: application/json
 
 {
     "name": "New Image Name"
 }
 
-### Rename image (invalid ID format)
-PATCH http://localhost:3000/api/images/invalid-id
-Content-Type: application/json
-
-{
-    "name": "New Name"
-}
-
-### Rename image (non-existent ID)
-PATCH http://localhost:3000/api/images/000000000000000000000000
-Content-Type: application/json
-
-{
-    "name": "New Name"
-}
-
-### Rename image (name too long - over 100 chars)
+### Rename image (try to rename without token - should get 401)
 PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Content-Type: application/json
+
+{
+    "name": "New Name"
+}
+
+### Rename image (try to rename with token from another user - should get 403 Forbidden)
+PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFub3RoZXJ1c2VyIiwiaWF0IjoxNzE1OTMyMjQ1LCJleHAiOjE3MTYwMTg2NDV9.7R8rYIrYIrYIrYIrYIrYIrYIrYIrYIrYIrYIrYIrYI
+Content-Type: application/json
+
+{
+    "name": "New Name"
+}
+
+### Rename image (invalid ID format) with token
+PATCH http://localhost:3000/api/images/invalid-id
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
+Content-Type: application/json
+
+{
+    "name": "New Name"
+}
+
+### Rename image (non-existent ID) with token
+PATCH http://localhost:3000/api/images/000000000000000000000000
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
+Content-Type: application/json
+
+{
+    "name": "New Name"
+}
+
+### Rename image (name too long - over 100 chars) with token
+PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
 Content-Type: application/json
 
 {
     "name": "This is a very long image name that exceeds one hundred characters which is the limit set by the API for testing purposes. This should definitely trigger the 413 error."
 }
 
-### Rename image (missing name in request body)
+### Rename image (missing name in request body) with token
 PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
 Content-Type: application/json
 
 {}
 
-### Rename image (wrong content type)
+### Rename image (wrong content type) with token
 PATCH http://localhost:3000/api/images/69adc72668dd63050662093d
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImNodW5reWxvdmVyMjMiLCJpYXQiOjE3MTU5MzIyNDUsImV4cCI6MTcxNjAxODY0NX0.6Q8qXQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQmQ
 Content-Type: text/plain
 
 New Name

@@ -1,11 +1,10 @@
-import express from "express";
 import { ObjectId } from "mongodb";
-import { ImageProvider } from "../ImageProvider.js";
+import { imageMiddlewareFactory, handleImageFileErrors } from "./imageUploadMiddleware.js";
 
 const MAX_NAME_LENGTH = 100;
 
 export function registerImageRoutes(app, imageProvider) {
-    // Get all images
+    // GET /api/images — Get all images (denormalized)
     app.get("/api/images", async (req, res) => {
         try {
             const images = await imageProvider.getAllImagesDenormalized();
@@ -16,12 +15,11 @@ export function registerImageRoutes(app, imageProvider) {
         }
     });
 
-    // Get one image by ID
+    // GET /api/images/:id — Get one image by ID
     app.get("/api/images/:id", async (req, res) => {
         try {
             const { id } = req.params;
-            
-            // Check if ID is a valid ObjectId
+
             if (!ObjectId.isValid(id)) {
                 return res.status(404).json({
                     error: "Not Found",
@@ -30,7 +28,7 @@ export function registerImageRoutes(app, imageProvider) {
             }
 
             const image = await imageProvider.getImageById(id);
-            
+
             if (!image) {
                 return res.status(404).json({
                     error: "Not Found",
@@ -45,13 +43,17 @@ export function registerImageRoutes(app, imageProvider) {
         }
     });
 
-    // Rename image
+    // PATCH /api/images/:id — Rename an image (owner only)
     app.patch("/api/images/:id", async (req, res) => {
         try {
             const { id } = req.params;
             const { name } = req.body;
+            const username = req.userInfo?.username;
 
-            // Check if ID is a valid ObjectId
+            if (!username) {
+                return res.status(401).end();
+            }
+
             if (!ObjectId.isValid(id)) {
                 return res.status(404).json({
                     error: "Not Found",
@@ -59,7 +61,6 @@ export function registerImageRoutes(app, imageProvider) {
                 });
             }
 
-            // Check if name is provided and is a string
             if (name === undefined || name === null) {
                 return res.status(400).json({
                     error: "Bad Request",
@@ -67,14 +68,13 @@ export function registerImageRoutes(app, imageProvider) {
                 });
             }
 
-            if (typeof name !== 'string') {
+            if (typeof name !== "string") {
                 return res.status(400).json({
                     error: "Bad Request",
                     message: "The 'name' field must be a string"
                 });
             }
 
-            // Check if name is empty or only whitespace
             if (name.trim().length === 0) {
                 return res.status(400).json({
                     error: "Bad Request",
@@ -82,7 +82,6 @@ export function registerImageRoutes(app, imageProvider) {
                 });
             }
 
-            // Check if name is too long
             if (name.length > MAX_NAME_LENGTH) {
                 return res.status(413).json({
                     error: "Content Too Large",
@@ -90,7 +89,23 @@ export function registerImageRoutes(app, imageProvider) {
                 });
             }
 
-            // Attempt to update the image
+            const image = await imageProvider.getImageById(id);
+
+            if (!image) {
+                return res.status(404).json({
+                    error: "Not Found",
+                    message: "Image does not exist"
+                });
+            }
+
+            // getImageById returns { author: { username } } — check nested field
+            if (image.author?.username !== username) {
+                return res.status(403).json({
+                    error: "Forbidden",
+                    message: "This user does not own this image"
+                });
+            }
+
             const matchedCount = await imageProvider.updateImageName(id, name);
 
             if (matchedCount === 0) {
@@ -100,11 +115,44 @@ export function registerImageRoutes(app, imageProvider) {
                 });
             }
 
-            // Success - no content to return
             res.status(204).send();
         } catch (error) {
             console.error("Error updating image:", error);
             res.status(500).json({ error: "Failed to update image" });
         }
     });
+
+    // POST /api/images — Upload a new image (Lab 24)
+    app.post(
+        "/api/images",
+        imageMiddlewareFactory.single("image"),
+        handleImageFileErrors,
+        async (req, res) => {
+            try {
+                const username = req.userInfo?.username;
+
+                if (!username) {
+                    return res.status(401).end();
+                }
+
+                if (!req.file || !req.body.name) {
+                    return res.status(400).json({
+                        error: "Bad Request",
+                        message: "Must provide an image file and a name"
+                    });
+                }
+
+                const newId = await imageProvider.createImage({
+                    src: `/uploads/${req.file.filename}`,
+                    name: req.body.name,
+                    authorId: username
+                });
+
+                res.status(201).json({ _id: newId });
+            } catch (error) {
+                console.error("Error uploading image:", error);
+                res.status(500).json({ error: "Failed to upload image" });
+            }
+        }
+    );
 }
